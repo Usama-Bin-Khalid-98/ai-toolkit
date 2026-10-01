@@ -4,36 +4,22 @@ description: Create a pull request for the current branch using this repo's conf
 
 Create a pull request for the current branch. Extra context from the user, if any: $ARGUMENTS
 
-**Step 0 — Load repo defaults** (do this before anything else, including preflight): look for `.claude/pr-defaults.json`.
+## Data required
 
-- If it exists, read it for this repo's defaults (`merge_flow`, `default_base_branch`, `hotfix_base_branch`, `default_reviewers`, `jira_base_url`, `jira_cloud_id`, `jira_project_key`, `jira_code_review_transition`). This repo's merge flow is one-way: feature branch → each branch in `merge_flow`, in order (e.g. `dev` → `stage` → `main`). Use `default_base_branch` as the PR base unless the user says this is a hotfix (use `hotfix_base_branch` instead) or explicitly names another base branch.
-- If it's missing, tell the user it doesn't exist yet, that creating it is optional but lets future runs skip the base-branch/reviewer/Jira questions, and show them exactly where to put it and what it can contain:
+This repo's PR defaults, kept inline so this command doesn't need a separate config file. Edit the values below directly, or let the command prompt you and fill them in itself the first time it runs.
 
-  > No `.claude/pr-defaults.json` found in this repo. It's optional, but without it I'll ask for the base branch every time and skip default reviewers and Jira linking. To set it up, create `.claude/pr-defaults.json` with any of these keys (all optional — omit what you don't use):
-  >
-  > ```json
-  > {
-  >   "merge_flow": ["dev", "stage", "main"],
-  >   "default_base_branch": "dev",
-  >   "hotfix_base_branch": "main",
-  >   "default_reviewers": ["github-username1", "github-username2"],
-  >   "jira_base_url": "https://your-org.atlassian.net",
-  >   "jira_cloud_id": "your-cloud-id",
-  >   "jira_project_key": "ABC",
-  >   "jira_code_review_transition": "Code Review"
-  > }
-  > ```
-  >
-  > - `merge_flow` — ordered branch chain feature branches flow through.
-  > - `default_base_branch` — branch PRs target by default (usually the first entry in `merge_flow`).
-  > - `hotfix_base_branch` — branch to target instead for hotfixes (usually `main`).
-  > - `default_reviewers` — GitHub usernames auto-requested as reviewers on every PR.
-  > - `jira_base_url` — Atlassian site URL, used to build ticket links.
-  > - `jira_cloud_id` — Atlassian cloud ID, needed for Jira transition calls via MCP.
-  > - `jira_project_key` — Jira project prefix (e.g. `ABC` for `ABC-1234`), used to detect ticket keys.
-  > - `jira_code_review_transition` — Jira status to move a ticket to once its PR is created (e.g. `"Code Review"`).
+- `merge_flow`: *(not set — ordered branch chain feature branches flow through, e.g. dev, stage, main)*
+- `default_base_branch`: *(not set — branch PRs target by default, usually the first entry in merge_flow)*
+- `hotfix_base_branch`: *(not set — branch to target instead for hotfixes, usually main)*
+- `default_reviewers`: *(not set, optional — GitHub usernames auto-requested as reviewers on every PR)*
+- `jira_base_url`: *(not set — Atlassian site URL, used to build ticket links, e.g. https://your-org.atlassian.net)*
+- `jira_cloud_id`: *(not set, optional — Atlassian cloud ID, needed only for the Jira transition call via MCP)*
+- `jira_project_key`: *(not set — Jira project prefix, e.g. ABC for ABC-1234, used to detect ticket keys)*
+- `jira_code_review_transition`: *(not set, optional — Jira status to move a ticket to once its PR is created, e.g. "Code Review")*
 
-  Then proceed without it for this run: ask the user for the base branch instead of guessing, and skip default reviewers and Jira linking — don't invent any of it. If the user wants the file created now, offer to do it, but don't block the rest of this command on that — continue creating the PR once you have the base branch.
+**Step 0 — Resolve the data above** (do this before anything else, including preflight): for any value still marked *(not set — ...)*, ask the user for it now — skip the ones marked optional if they have nothing to give. Once they answer, edit this file (`create-pr.md`) and replace each bullet above with the value they gave, so future runs don't ask again. If the user doesn't know a required value or wants to skip setup for this run, proceed without it instead of blocking: ask for the base branch directly, and skip default reviewers / Jira linking for anything left unset.
+
+This repo's merge flow is one-way: feature branch → each branch in `merge_flow`, in order (e.g. `dev` → `stage` → `main`). Use `default_base_branch` as the PR base unless the user says this is a hotfix (use `hotfix_base_branch` instead) or explicitly names another base branch.
 
 **Preflight** (check before anything else besides Step 0): run `gh auth status` and `git remote -v`.
 - If `gh auth status` fails, tell the user to run `gh auth login` and stop — nothing downstream will work without it.
